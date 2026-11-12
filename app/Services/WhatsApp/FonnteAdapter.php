@@ -92,3 +92,4 @@ class FonnteAdapter implements WhatsAppAdapterInterface
         return true;
     }
 }
+

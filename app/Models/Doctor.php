@@ -42,3 +42,4 @@ class Doctor extends Model
         return $this->hasMany(Queue::class);
     }
 }
+

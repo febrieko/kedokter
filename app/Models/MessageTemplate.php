@@ -34,3 +34,4 @@ class MessageTemplate extends Model
         return $message;
     }
 }
+

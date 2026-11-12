@@ -184,3 +184,4 @@ class QueueController extends Controller
         }
     }
 }
+

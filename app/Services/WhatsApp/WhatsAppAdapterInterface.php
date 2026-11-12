@@ -27,3 +27,4 @@ interface WhatsAppAdapterInterface
      */
     public function verifyWebhook(Request $request, array $config = []): bool;
 }
+

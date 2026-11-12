@@ -71,3 +71,4 @@ class DoctorSchedule extends Model
         return $days[$this->weekday] ?? 'Unknown';
     }
 }
+

@@ -31,3 +31,4 @@ class MessageLog extends Model
         return $this->belongsTo(Patient::class);
     }
 }
+

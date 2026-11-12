@@ -50,6 +50,26 @@
                     <i class="fa-solid fa-desktop mr-1.5"></i> Layar Display TV <i class="fa-solid fa-arrow-up-right-from-square ml-1 text-xs"></i>
                 </a>
                 @endif
+
+                @auth
+                <div class="h-6 w-px bg-slate-200 mx-1"></div>
+
+                <div class="flex items-center space-x-2 pl-1">
+                    <div class="text-right hidden sm:block">
+                        <span class="text-xs font-bold text-slate-800 block leading-tight">{{ auth()->user()->name }}</span>
+                        <span class="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.2 rounded bg-slate-100 text-slate-600">
+                            {{ auth()->user()->role }}
+                        </span>
+                    </div>
+
+                    <form action="{{ route('logout') }}" method="POST">
+                        @csrf
+                        <button type="submit" class="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" title="Keluar / Logout">
+                            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                        </button>
+                    </form>
+                </div>
+                @endauth
             </nav>
         </div>
     </header>
@@ -87,3 +107,4 @@
     @yield('scripts')
 </body>
 </html>
+

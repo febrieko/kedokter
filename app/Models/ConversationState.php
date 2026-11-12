@@ -37,3 +37,4 @@ class ConversationState extends Model
         return $this->expires_at->isPast();
     }
 }
+

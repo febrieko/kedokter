@@ -47,3 +47,4 @@ class Patient extends Model
         return $this->hasMany(MessageLog::class);
     }
 }
+

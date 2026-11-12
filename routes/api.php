@@ -10,3 +10,4 @@ Route::post('/webhook/whatsapp/{clinic_slug}', [WhatsAppWebhookController::class
 // SSE Stream for Waiting Room Display
 Route::get('/display/{clinic_slug}/stream', [DisplayStreamController::class, 'stream']);
 Route::get('/display/{clinic_slug}/data', [DisplayStreamController::class, 'data']);
+

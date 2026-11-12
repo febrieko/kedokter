@@ -367,3 +367,4 @@ class WhatsAppBotService
         return "✅ Antrian Anda untuk dokter *{$queue->doctor->name}* pada tanggal *{$queue->queue_date->format('d/m/Y')}* (Nomor #{$queue->number}) telah *DIBATALKAN*.\n\nKuota antrian telah dibebaskan. Terima kasih!";
     }
 }
+

@@ -91,3 +91,4 @@ class WahaAdapter implements WhatsAppAdapterInterface
         return true;
     }
 }
+

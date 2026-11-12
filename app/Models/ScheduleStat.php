@@ -37,3 +37,4 @@ class ScheduleStat extends Model
         return $this->belongsTo(DoctorSchedule::class, 'doctor_schedule_id');
     }
 }
+

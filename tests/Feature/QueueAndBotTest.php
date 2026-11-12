@@ -178,3 +178,4 @@ class QueueAndBotTest extends TestCase
         $this->assertEquals('BPJS', $savedPatient->insurance_type);
     }
 }
+
