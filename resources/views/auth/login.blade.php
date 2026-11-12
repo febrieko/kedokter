@@ -81,18 +81,26 @@
             <div class="mt-6 pt-5 border-t border-slate-100">
                 <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Akun Demo Bawaan:</p>
                 <div class="space-y-1.5 text-xs text-slate-600">
-                    <div class="flex justify-between items-center p-2 rounded-lg bg-slate-50 border border-slate-200/60 cursor-pointer hover:bg-blue-50 transition" onclick="fillAccount('resepsionis@klinik.id', 'password')">
+                    <div class="flex justify-between items-center p-2 rounded-lg bg-amber-50/70 border border-amber-200/80 cursor-pointer hover:bg-amber-100 transition" onclick="fillAccount('superadmin@kedokter.id', 'password')">
                         <div>
-                            <strong class="text-slate-800">Resepsionis</strong>
-                            <span class="text-[11px] text-slate-500 block">resepsionis@klinik.id</span>
+                            <strong class="text-amber-950 flex items-center"><i class="fa-solid fa-crown text-amber-500 mr-1 text-[11px]"></i> SuperAdmin Multi-Klinik</strong>
+                            <span class="text-[11px] text-amber-700 block">superadmin@kedokter.id</span>
                         </div>
-                        <span class="text-[10px] font-mono bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-500">password</span>
+                        <span class="text-[10px] font-mono bg-white px-2 py-0.5 rounded border border-amber-200 text-amber-700">password</span>
                     </div>
 
                     <div class="flex justify-between items-center p-2 rounded-lg bg-slate-50 border border-slate-200/60 cursor-pointer hover:bg-blue-50 transition" onclick="fillAccount('admin@klinik.id', 'password')">
                         <div>
                             <strong class="text-slate-800">Admin Klinik</strong>
                             <span class="text-[11px] text-slate-500 block">admin@klinik.id</span>
+                        </div>
+                        <span class="text-[10px] font-mono bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-500">password</span>
+                    </div>
+
+                    <div class="flex justify-between items-center p-2 rounded-lg bg-slate-50 border border-slate-200/60 cursor-pointer hover:bg-blue-50 transition" onclick="fillAccount('resepsionis@klinik.id', 'password')">
+                        <div>
+                            <strong class="text-slate-800">Resepsionis</strong>
+                            <span class="text-[11px] text-slate-500 block">resepsionis@klinik.id</span>
                         </div>
                         <span class="text-[10px] font-mono bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-500">password</span>
                     </div>

@@ -13,6 +13,7 @@ class User extends Authenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
+    public const ROLE_SUPERADMIN = 'SUPERADMIN';
     public const ROLE_ADMIN = 'ADMIN';
     public const ROLE_STAFF = 'STAFF';
     public const ROLE_DOCTOR = 'DOCTOR';
@@ -66,9 +67,14 @@ class User extends Authenticatable
         return $this->belongsTo(Doctor::class);
     }
 
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === self::ROLE_SUPERADMIN;
+    }
+
     public function isAdmin(): bool
     {
-        return $this->role === self::ROLE_ADMIN;
+        return in_array($this->role, [self::ROLE_ADMIN, self::ROLE_SUPERADMIN]);
     }
 
     public function isStaff(): bool

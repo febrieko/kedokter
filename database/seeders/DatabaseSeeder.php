@@ -38,6 +38,18 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
+        // 1.5 Create Global SuperAdmin User (clinic_id is null)
+        User::firstOrCreate(
+            ['email' => 'superadmin@kedokter.id'],
+            [
+                'clinic_id' => null,
+                'name' => 'Super Administrator',
+                'password' => Hash::make('password'),
+                'role' => User::ROLE_SUPERADMIN,
+                'is_active' => true,
+            ]
+        );
+
         // 2. Create Admin & Staff Users
         User::firstOrCreate(
             ['email' => 'admin@klinik.id'],

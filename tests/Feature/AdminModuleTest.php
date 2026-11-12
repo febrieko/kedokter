@@ -155,3 +155,4 @@ class AdminModuleTest extends TestCase
         $this->assertEquals('Pendaftaran sukses untuk {nama}!', $template->fresh()->body);
     }
 }
+

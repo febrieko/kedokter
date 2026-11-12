@@ -13,7 +13,10 @@ class DoctorController extends Controller
 {
     protected function getClinic(Request $request): Clinic
     {
-        return $request->user()->clinic ?? Clinic::firstOrFail();
+        return $request->attributes->get('clinic') 
+            ?? (app()->has('currentClinic') ? app('currentClinic') : null) 
+            ?? $request->user()->clinic 
+            ?? Clinic::firstOrFail();
     }
 
     public function index(Request $request): View
@@ -93,3 +96,4 @@ class DoctorController extends Controller
         return back()->with('success', "Dokter {$doctor->name} berhasil dihapus dari klinik.");
     }
 }
+

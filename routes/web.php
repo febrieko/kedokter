@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\ScheduleController;
 use App\Http\Controllers\Admin\WhatsAppSettingController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\QueueController;
+use App\Http\Controllers\SuperAdmin\ClinicController as SuperAdminClinicController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -24,8 +25,8 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
-// Protected Staff & Receptionist Queue Management
-Route::middleware('auth')->prefix('antrian')->name('queue.')->group(function () {
+// Protected Staff & Receptionist Queue Management (Scoped per Clinic)
+Route::middleware(['auth', 'clinic.scope'])->prefix('antrian')->name('queue.')->group(function () {
     Route::get('/', [QueueController::class, 'index'])->name('index');
     Route::post('/manual', [QueueController::class, 'storeManual'])->name('store-manual');
     Route::post('/{queue}/call', [QueueController::class, 'call'])->name('call');
@@ -35,8 +36,8 @@ Route::middleware('auth')->prefix('antrian')->name('queue.')->group(function () 
     Route::post('/{queue}/cancel', [QueueController::class, 'cancel'])->name('cancel');
 });
 
-// Protected Clinic Administrator Master Data & Settings Panel
-Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+// Protected Clinic Administrator Master Data & Settings Panel (Scoped per Clinic)
+Route::middleware(['auth', 'admin', 'clinic.scope'])->prefix('admin')->name('admin.')->group(function () {
     // 1. Doctors Management
     Route::get('/dokter', [DoctorController::class, 'index'])->name('doctors.index');
     Route::post('/dokter', [DoctorController::class, 'store'])->name('doctors.store');
@@ -61,6 +62,14 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/pengaturan-wa/config', [WhatsAppSettingController::class, 'updateConfig'])->name('whatsapp.config');
     Route::post('/pengaturan-wa/test', [WhatsAppSettingController::class, 'testSend'])->name('whatsapp.test');
     Route::put('/pengaturan-wa/template/{template}', [WhatsAppSettingController::class, 'updateTemplate'])->name('whatsapp.template');
+});
+
+// Protected SuperAdmin Panel (Multi-Clinic Platform Management)
+Route::middleware(['auth', 'superadmin'])->prefix('superadmin')->name('superadmin.')->group(function () {
+    Route::get('/klinik', [SuperAdminClinicController::class, 'index'])->name('clinics.index');
+    Route::post('/klinik', [SuperAdminClinicController::class, 'store'])->name('clinics.store');
+    Route::put('/klinik/{clinic}', [SuperAdminClinicController::class, 'update'])->name('clinics.update');
+    Route::post('/switch/{clinic}', [SuperAdminClinicController::class, 'switchClinic'])->name('clinics.switch');
 });
 
 // Public Waiting Room Display (No login required)

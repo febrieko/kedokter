@@ -47,6 +47,12 @@
                 </a>
 
                 @auth
+                    @if(auth()->user()->isSuperAdmin())
+                    <a href="{{ route('superadmin.clinics.index') }}" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition {{ request()->routeIs('superadmin.clinics.*') ? 'bg-amber-100 text-amber-900 font-bold' : 'text-amber-700 hover:text-amber-900 hover:bg-amber-50' }}">
+                        <i class="fa-solid fa-crown text-amber-500 mr-1"></i> Multi-Klinik
+                    </a>
+                    @endif
+
                     @if(auth()->user()->isAdmin())
                     <a href="{{ route('admin.doctors.index') }}" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition {{ request()->routeIs('admin.doctors.*') ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
                         <i class="fa-solid fa-user-doctor mr-1"></i> Dokter

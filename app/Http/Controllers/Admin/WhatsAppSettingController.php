@@ -18,7 +18,10 @@ class WhatsAppSettingController extends Controller
 
     protected function getClinic(Request $request): Clinic
     {
-        return $request->user()->clinic ?? Clinic::firstOrFail();
+        return $request->attributes->get('clinic') 
+            ?? (app()->has('currentClinic') ? app('currentClinic') : null) 
+            ?? $request->user()->clinic 
+            ?? Clinic::firstOrFail();
     }
 
     public function index(Request $request): View
@@ -97,3 +100,4 @@ class WhatsAppSettingController extends Controller
         return back()->with('success', "Template pesan '{$template->key}' berhasil diperbarui.");
     }
 }
+

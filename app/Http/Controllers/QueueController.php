@@ -26,16 +26,10 @@ class QueueController extends Controller
      */
     public function index(Request $request): View
     {
-        // For development/single installation fallback to first clinic
-        $clinic = Clinic::first();
-        if (!$clinic) {
-            $clinic = Clinic::create([
-                'name' => 'Klinik Pratama Sehat Sejahtera',
-                'slug' => 'klinik-sehat',
-                'phone' => '+6281234567890',
-                'address' => 'Jl. Kesehatan No. 12, Jakarta',
-            ]);
-        }
+        $clinic = $request->attributes->get('clinic') 
+            ?? (app()->has('currentClinic') ? app('currentClinic') : null) 
+            ?? $request->user()?->clinic 
+            ?? Clinic::firstOrFail();
 
         $date = $request->input('date', Carbon::today()->toDateString());
         $doctorId = $request->input('doctor_id');
