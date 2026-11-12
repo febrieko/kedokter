@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\HolidayController;
 use App\Http\Controllers\Admin\ScheduleController;
 use App\Http\Controllers\Admin\WhatsAppSettingController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Doctor\DoctorQueueController;
 use App\Http\Controllers\QueueController;
 use App\Http\Controllers\SuperAdmin\ClinicController as SuperAdminClinicController;
 use Illuminate\Support\Facades\Auth;
@@ -12,9 +13,13 @@ use Illuminate\Support\Facades\Route;
 
 // Redirect root to dashboard if logged in, or to login page if guest
 Route::get('/', function () {
-    return Auth::check()
-        ? redirect()->route('queue.index')
-        : redirect()->route('login');
+    if (!Auth::check()) {
+        return redirect()->route('login');
+    }
+    if (Auth::user()->isDoctor()) {
+        return redirect()->route('doctor.queue.index');
+    }
+    return redirect()->route('queue.index');
 });
 
 // Authentication Routes
@@ -35,6 +40,17 @@ Route::middleware(['auth', 'clinic.scope'])->prefix('antrian')->name('queue.')->
     Route::post('/{queue}/skip', [QueueController::class, 'skip'])->name('skip');
     Route::post('/{queue}/cancel', [QueueController::class, 'cancel'])->name('cancel');
     Route::post('/reminders/h1', [QueueController::class, 'triggerH1Reminders'])->name('reminders.h1');
+});
+
+// Protected Doctor Examination Portal (Scoped per Clinic)
+Route::middleware(['auth', 'clinic.scope'])->prefix('dokter')->name('doctor.')->group(function () {
+    Route::get('/antrian', [DoctorQueueController::class, 'index'])->name('queue.index');
+    Route::post('/antrian/panggil-berikutnya', [DoctorQueueController::class, 'callNext'])->name('queue.call-next');
+    Route::post('/antrian/{queue}/call', [DoctorQueueController::class, 'call'])->name('queue.call');
+    Route::post('/antrian/{queue}/start', [DoctorQueueController::class, 'start'])->name('queue.start');
+    Route::post('/antrian/{queue}/finish', [DoctorQueueController::class, 'finish'])->name('queue.finish');
+    Route::post('/antrian/{queue}/skip', [DoctorQueueController::class, 'skip'])->name('queue.skip');
+    Route::post('/antrian/{queue}/recall', [DoctorQueueController::class, 'recall'])->name('queue.recall');
 });
 
 // Protected Clinic Administrator Master Data & Settings Panel (Scoped per Clinic)

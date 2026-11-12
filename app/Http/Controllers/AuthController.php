@@ -37,7 +37,11 @@ class AuthController extends Controller
         if (Auth::attempt($credentials, $remember)) {
             $request->session()->regenerate();
 
-            return redirect()->intended(route('queue.index'))->with('success', 'Selamat datang kembali, ' . Auth::user()->name . '!');
+            $defaultRoute = Auth::user()->isDoctor()
+                ? route('doctor.queue.index')
+                : (Auth::user()->isSuperAdmin() ? route('superadmin.clinics.index') : route('queue.index'));
+
+            return redirect()->intended($defaultRoute)->with('success', 'Selamat datang kembali, ' . Auth::user()->name . '!');
         }
 
         throw ValidationException::withMessages([

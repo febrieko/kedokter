@@ -223,16 +223,22 @@ class QueueService
     /**
      * Mark queue as done & recalculate schedule stats
      */
-    public function finishService(Queue $queue): Queue
+    public function finishService(Queue $queue, ?string $notes = null): Queue
     {
         $finishedAt = now();
         $startedAt = $queue->started_at ?? $queue->called_at ?? $finishedAt;
         $serviceMinutes = max(1, (int) round($startedAt->diffInMinutes($finishedAt)));
 
-        $queue->update([
+        $updateData = [
             'status' => Queue::STATUS_DONE,
             'finished_at' => $finishedAt,
-        ]);
+        ];
+
+        if ($notes !== null) {
+            $updateData['doctor_notes'] = $notes;
+        }
+
+        $queue->update($updateData);
 
         // Update statistics if schedule exists
         if ($queue->doctor_schedule_id) {

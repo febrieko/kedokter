@@ -84,6 +84,19 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
+        // 3.1 Create Doctor User Account
+        User::firstOrCreate(
+            ['email' => 'dokter@klinik.id'],
+            [
+                'clinic_id' => $clinic->id,
+                'doctor_id' => $doc1->id,
+                'name' => 'dr. Budi Santoso, Sp.PD',
+                'password' => Hash::make('password'),
+                'role' => User::ROLE_DOCTOR,
+                'is_active' => true,
+            ]
+        );
+
         $doc2 = Doctor::firstOrCreate(
             ['name' => 'dr. Siti Rahma, Sp.A'],
             [

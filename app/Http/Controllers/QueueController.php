@@ -115,9 +115,10 @@ class QueueController extends Controller
     /**
      * Selesai pelayanan dokter
      */
-    public function finish(Queue $queue): RedirectResponse
+    public function finish(Request $request, Queue $queue): RedirectResponse
     {
-        $this->queueService->finishService($queue);
+        $notes = $request->input('doctor_notes');
+        $this->queueService->finishService($queue, $notes);
 
         // Otomasi Pengingat: Cek dan ingatkan pasien berikutnya
         $this->reminderService->checkAndTriggerNearTurn($queue);

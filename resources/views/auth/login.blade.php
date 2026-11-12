@@ -89,6 +89,14 @@
                         <span class="text-[10px] font-mono bg-white px-2 py-0.5 rounded border border-amber-200 text-amber-700">password</span>
                     </div>
 
+                    <div class="flex justify-between items-center p-2 rounded-lg bg-blue-50/70 border border-blue-200/80 cursor-pointer hover:bg-blue-100 transition" onclick="fillAccount('dokter@klinik.id', 'password')">
+                        <div>
+                            <strong class="text-blue-950 flex items-center"><i class="fa-solid fa-user-doctor text-blue-600 mr-1 text-[11px]"></i> Dokter (dr. Budi Santoso, Sp.PD)</strong>
+                            <span class="text-[11px] text-blue-700 block">dokter@klinik.id</span>
+                        </div>
+                        <span class="text-[10px] font-mono bg-white px-2 py-0.5 rounded border border-blue-200 text-blue-700">password</span>
+                    </div>
+
                     <div class="flex justify-between items-center p-2 rounded-lg bg-slate-50 border border-slate-200/60 cursor-pointer hover:bg-blue-50 transition" onclick="fillAccount('admin@klinik.id', 'password')">
                         <div>
                             <strong class="text-slate-800">Admin Klinik</strong>
