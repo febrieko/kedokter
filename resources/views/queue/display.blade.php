@@ -33,11 +33,20 @@
             </div>
         </div>
 
-        <div class="flex items-center space-x-6">
-            <button id="enableSoundBtn" onclick="enableAudio()" class="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-xs font-semibold text-slate-300 transition flex items-center">
-                <i class="fa-solid fa-volume-high mr-2 text-emerald-400"></i> <span id="soundStatusText">Suara Aktif</span>
+        <div class="flex items-center space-x-3">
+            <button onclick="testSpeechCall()" class="px-3.5 py-2 rounded-xl bg-slate-700/80 hover:bg-slate-600 text-xs font-semibold text-blue-300 transition flex items-center border border-slate-600">
+                <i class="fa-solid fa-play mr-1.5 text-blue-400"></i> Tes Suara
             </button>
-            <div class="text-right">
+
+            <!-- Voice Selector -->
+            <select id="voiceSelect" onchange="changeVoice(this.value)" class="bg-slate-700 text-slate-200 text-xs px-3 py-2 rounded-xl border border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">Memuat Pilihan Suara Indonesia...</option>
+            </select>
+
+            <button id="enableSoundBtn" onclick="toggleAudio()" class="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-xs font-semibold text-slate-300 transition flex items-center border border-slate-600">
+                <i id="soundIcon" class="fa-solid fa-volume-high mr-2 text-emerald-400"></i> <span id="soundStatusText">Suara Aktif</span>
+            </button>
+            <div class="text-right pl-2">
                 <div id="liveClock" class="text-3xl font-mono font-bold text-white tracking-wider">--:--:--</div>
                 <div id="liveDate" class="text-xs text-slate-400">Loading...</div>
             </div>
@@ -120,12 +129,14 @@
         </div>
     </footer>
 
-    <!-- Audio Speech / Bell Script -->
+    <!-- Audio Speech & Ding-Dong Chime Engine -->
     <script>
         const clinicSlug = '{{ $clinic->slug }}';
         let lastAnnouncedNumber = null;
-        let lastCallCount = 0;
         let soundEnabled = true;
+        let audioCtx = null;
+        let availableVoices = [];
+        let selectedVoice = null;
 
         // Clock display
         function updateClock() {
@@ -136,28 +147,171 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        function enableAudio() {
-            soundEnabled = !soundEnabled;
-            const btn = document.getElementById('soundStatusText');
-            btn.textContent = soundEnabled ? 'Suara Aktif' : 'Suara Mati';
-            if (soundEnabled) {
-                speakText('Suara panggilan aktif');
+        // 1. Inisialisasi AudioContext & Nada Ding-Dong Rumah Sakit
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) {
+                    audioCtx = new AudioContextClass();
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        // Memainkan 3 nada denting bel panggilan khas rumah sakit (C5 -> E5 -> G5)
+        function playHospitalChime() {
+            return new Promise((resolve) => {
+                const ctx = getAudioContext();
+                if (!ctx) {
+                    resolve();
+                    return;
+                }
+
+                const notes = [
+                    { freq: 523.25, time: 0.00, duration: 0.35 }, // C5
+                    { freq: 659.25, time: 0.28, duration: 0.35 }, // E5
+                    { freq: 783.99, time: 0.56, duration: 0.65 }, // G5
+                ];
+
+                const now = ctx.currentTime;
+
+                notes.forEach(note => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(note.freq, now + note.time);
+
+                    // Envelope lembut seperti lonceng
+                    gain.gain.setValueAtTime(0.0001, now + note.time);
+                    gain.gain.exponentialRampToValueAtTime(0.3, now + note.time + 0.04);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + note.time + note.duration);
+
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+
+                    osc.start(now + note.time);
+                    osc.stop(now + note.time + note.duration);
+                });
+
+                // Tunggu sampai denting bel selesai sebelum suara mulai
+                setTimeout(resolve, 1100);
+            });
+        }
+
+        // 2. Deteksi & Pemilihan Voice Bahasa Indonesia Paling Natural
+        function loadVoices() {
+            if (!('speechSynthesis' in window)) return;
+
+            availableVoices = window.speechSynthesis.getVoices();
+            const voiceSelect = document.getElementById('voiceSelect');
+            voiceSelect.innerHTML = '';
+
+            // Filter suara Indonesia
+            const idVoices = availableVoices.filter(v => 
+                v.lang.toLowerCase().includes('id') || 
+                v.name.toLowerCase().includes('indonesia') ||
+                v.name.toLowerCase().includes('gadis') ||
+                v.name.toLowerCase().includes('ardi')
+            );
+
+            // Prioritaskan suara neural online (Microsoft Gadis / Ardi / Google)
+            idVoices.sort((a, b) => {
+                const aNatural = a.name.includes('Natural') || a.name.includes('Gadis') || a.name.includes('Google');
+                const bNatural = b.name.includes('Natural') || b.name.includes('Gadis') || b.name.includes('Google');
+                return bNatural - aNatural;
+            });
+
+            if (idVoices.length > 0) {
+                idVoices.forEach((v, idx) => {
+                    const opt = document.createElement('option');
+                    opt.value = v.name;
+                    opt.textContent = v.name.replace('Microsoft ', '').replace('Online (Natural) - ', '').replace('Indonesian (Indonesia)', '(ID)');
+                    if (idx === 0) opt.selected = true;
+                    voiceSelect.appendChild(opt);
+                });
+                selectedVoice = idVoices[0];
+            } else {
+                // Fallback jika tidak ada suara lokal eksplisit
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.textContent = 'Suara Standar Browser';
+                voiceSelect.appendChild(opt);
             }
         }
 
-        // Text To Speech Indonesian
-        function speakText(text) {
-            if (!soundEnabled || !('speechSynthesis' in window)) return;
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = loadVoices;
+            loadVoices();
+        }
+
+        function changeVoice(voiceName) {
+            selectedVoice = availableVoices.find(v => v.name === voiceName) || null;
+            speakText('Suara panggilan diganti');
+        }
+
+        function toggleAudio() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('soundStatusText');
+            const icon = document.getElementById('soundIcon');
+
+            btn.textContent = soundEnabled ? 'Suara Aktif' : 'Suara Mati';
+            icon.className = soundEnabled ? 'fa-solid fa-volume-high mr-2 text-emerald-400' : 'fa-solid fa-volume-xmark mr-2 text-rose-400';
+
+            if (soundEnabled) {
+                getAudioContext();
+                speakAnnouncement(1, 'Ruang Poli');
+            }
+        }
+
+        // 3. Mesin Panggilan Suara Natural (Bel Ding-dong + Text-to-Speech)
+        async function speakAnnouncement(queueNumber, roomName) {
+            if (!soundEnabled) return;
+
+            // 1. Bunyikan Bel Rumah Sakit terlebih dahulu
+            await playHospitalChime();
+
+            // 2. Ucapkan kalimat panggilan dengan intonasi natural & jeda
+            if (!('speechSynthesis' in window)) return;
             window.speechSynthesis.cancel();
 
-            const utterance = new SpeechSynthesisUtterance(text);
+            // Kalimat sopan standar rumah sakit di Indonesia
+            const textToSpeak = `Nomor antrian... ${queueNumber}... Silakan menuju ke... ${roomName || 'ruang periksa'}.`;
+
+            const utterance = new SpeechSynthesisUtterance(textToSpeak);
             utterance.lang = 'id-ID';
-            utterance.rate = 0.9;
-            utterance.pitch = 1.0;
+
+            if (selectedVoice) {
+                utterance.voice = selectedVoice;
+            }
+
+            // Atur kecepatan bicara yang tenang dan artikulatif
+            utterance.rate = 0.88; // Sedikit lebih santai agar jelas di ruang tunggu
+            utterance.pitch = 1.05; // Nada ramah
+            utterance.volume = 1.0;
+
             window.speechSynthesis.speak(utterance);
         }
 
-        // Render data payload
+        function testSpeechCall() {
+            getAudioContext();
+            speakAnnouncement(5, 'Poli Spesialis Penyakit Dalam');
+        }
+
+        function speakText(text) {
+            if (!soundEnabled || !('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = 'id-ID';
+            if (selectedVoice) u.voice = selectedVoice;
+            u.rate = 0.95;
+            window.speechSynthesis.speak(u);
+        }
+
+        // 4. Render Data dari Realtime SSE / Polling
         function renderDisplay(data) {
             // 1. Current call
             const callNumberEl = document.getElementById('callNumber');
@@ -174,8 +328,7 @@
                 const callKey = `${call.number}-${call.call_count}`;
                 if (lastAnnouncedNumber !== callKey) {
                     lastAnnouncedNumber = callKey;
-                    const speechPhrase = `Nomor antrian, ${call.number}, silakan menuju ruang ${call.room || 'periksa'}`;
-                    speakText(speechPhrase);
+                    speakAnnouncement(call.number, call.room || call.doctor);
                 }
             } else {
                 callNumberEl.textContent = '-';

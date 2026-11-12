@@ -43,3 +43,4 @@ class SendH1RemindersCommand extends Command
         return Command::SUCCESS;
     }
 }
+
