@@ -88,3 +88,4 @@ class AuthTest extends TestCase
         $response->assertSee('Live Antrian Ruang Tunggu');
     }
 }
+

@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Controllers\Admin\DoctorController;
+use App\Http\Controllers\Admin\HolidayController;
+use App\Http\Controllers\Admin\ScheduleController;
+use App\Http\Controllers\Admin\WhatsAppSettingController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\QueueController;
 use Illuminate\Support\Facades\Auth;
@@ -29,6 +33,34 @@ Route::middleware('auth')->prefix('antrian')->name('queue.')->group(function () 
     Route::post('/{queue}/finish', [QueueController::class, 'finish'])->name('finish');
     Route::post('/{queue}/skip', [QueueController::class, 'skip'])->name('skip');
     Route::post('/{queue}/cancel', [QueueController::class, 'cancel'])->name('cancel');
+});
+
+// Protected Clinic Administrator Master Data & Settings Panel
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    // 1. Doctors Management
+    Route::get('/dokter', [DoctorController::class, 'index'])->name('doctors.index');
+    Route::post('/dokter', [DoctorController::class, 'store'])->name('doctors.store');
+    Route::put('/dokter/{doctor}', [DoctorController::class, 'update'])->name('doctors.update');
+    Route::delete('/dokter/{doctor}', [DoctorController::class, 'destroy'])->name('doctors.destroy');
+
+    // 2. Weekly Schedules & Dynamic Overrides
+    Route::get('/jadwal', [ScheduleController::class, 'index'])->name('schedules.index');
+    Route::post('/jadwal', [ScheduleController::class, 'store'])->name('schedules.store');
+    Route::put('/jadwal/{schedule}', [ScheduleController::class, 'update'])->name('schedules.update');
+    Route::delete('/jadwal/{schedule}', [ScheduleController::class, 'destroy'])->name('schedules.destroy');
+    Route::post('/jadwal/override', [ScheduleController::class, 'storeOverride'])->name('schedules.override.store');
+    Route::delete('/jadwal/override/{override}', [ScheduleController::class, 'destroyOverride'])->name('schedules.override.destroy');
+
+    // 3. Holidays
+    Route::get('/libur', [HolidayController::class, 'index'])->name('holidays.index');
+    Route::post('/libur', [HolidayController::class, 'store'])->name('holidays.store');
+    Route::delete('/libur/{holiday}', [HolidayController::class, 'destroy'])->name('holidays.destroy');
+
+    // 4. WhatsApp Gateway & Message Templates
+    Route::get('/pengaturan-wa', [WhatsAppSettingController::class, 'index'])->name('whatsapp.index');
+    Route::post('/pengaturan-wa/config', [WhatsAppSettingController::class, 'updateConfig'])->name('whatsapp.config');
+    Route::post('/pengaturan-wa/test', [WhatsAppSettingController::class, 'testSend'])->name('whatsapp.test');
+    Route::put('/pengaturan-wa/template/{template}', [WhatsAppSettingController::class, 'updateTemplate'])->name('whatsapp.template');
 });
 
 // Public Waiting Room Display (No login required)

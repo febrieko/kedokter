@@ -41,13 +41,31 @@
                 </div>
             </div>
 
-            <nav class="flex items-center space-x-3">
-                <a href="{{ route('queue.index') }}" class="px-3.5 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('queue.index') ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
-                    <i class="fa-solid fa-table-list mr-1.5"></i> Dashboard Antrian
+            <nav class="flex items-center space-x-1.5 sm:space-x-2">
+                <a href="{{ route('queue.index') }}" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition {{ request()->routeIs('queue.index') ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                    <i class="fa-solid fa-table-list mr-1"></i> Antrian
                 </a>
+
+                @auth
+                    @if(auth()->user()->isAdmin())
+                    <a href="{{ route('admin.doctors.index') }}" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition {{ request()->routeIs('admin.doctors.*') ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                        <i class="fa-solid fa-user-doctor mr-1"></i> Dokter
+                    </a>
+                    <a href="{{ route('admin.schedules.index') }}" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition {{ request()->routeIs('admin.schedules.*') ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                        <i class="fa-solid fa-calendar-days mr-1"></i> Jadwal & Kuota
+                    </a>
+                    <a href="{{ route('admin.holidays.index') }}" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition {{ request()->routeIs('admin.holidays.*') ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                        <i class="fa-solid fa-mug-hot mr-1"></i> Libur
+                    </a>
+                    <a href="{{ route('admin.whatsapp.index') }}" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition {{ request()->routeIs('admin.whatsapp.*') ? 'bg-emerald-50 text-emerald-700 font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                        <i class="fa-brands fa-whatsapp mr-1 text-emerald-600"></i> WhatsApp
+                    </a>
+                    @endif
+                @endauth
+
                 @if(isset($clinic))
-                <a href="{{ route('display', $clinic->slug) }}" target="_blank" class="px-3.5 py-2 rounded-lg text-sm font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition">
-                    <i class="fa-solid fa-desktop mr-1.5"></i> Layar Display TV <i class="fa-solid fa-arrow-up-right-from-square ml-1 text-xs"></i>
+                <a href="{{ route('display', $clinic->slug) }}" target="_blank" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition hidden md:flex items-center">
+                    <i class="fa-solid fa-desktop mr-1.5"></i> Display TV <i class="fa-solid fa-arrow-up-right-from-square ml-1 text-xs"></i>
                 </a>
                 @endif
 
