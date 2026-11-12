@@ -58,3 +58,4 @@ class EnsureClinicScope
         return $next($request);
     }
 }
+

@@ -7,6 +7,7 @@ use App\Models\Doctor;
 use App\Models\Patient;
 use App\Models\Queue;
 use App\Services\QueueService;
+use App\Services\ReminderService;
 use App\Services\WhatsApp\WhatsAppManager;
 use Carbon\Carbon;
 use Exception;
@@ -18,7 +19,8 @@ class QueueController extends Controller
 {
     public function __construct(
         protected QueueService $queueService,
-        protected WhatsAppManager $waManager
+        protected WhatsAppManager $waManager,
+        protected ReminderService $reminderService
     ) {}
 
     /**
@@ -92,6 +94,9 @@ class QueueController extends Controller
                 $this->waManager->send($queue->clinic, $queue->patient->phone, $msg, $queue->patient);
             }
 
+            // Otomasi Pengingat: Pemicu Near-Turn Reminder untuk pasien di sisa 2 antrian berikutnya
+            $this->reminderService->checkAndTriggerNearTurn($queue);
+
             return back()->with('success', $result['message']);
         } catch (Exception $e) {
             return back()->with('error', $e->getMessage());
@@ -113,7 +118,25 @@ class QueueController extends Controller
     public function finish(Queue $queue): RedirectResponse
     {
         $this->queueService->finishService($queue);
+
+        // Otomasi Pengingat: Cek dan ingatkan pasien berikutnya
+        $this->reminderService->checkAndTriggerNearTurn($queue);
+
         return back()->with('success', "Pelayanan pasien nomor #{$queue->number} telah selesai.");
+    }
+
+    /**
+     * Pemicu manual kirim pengingat jadwal besok (H-1)
+     */
+    public function triggerH1Reminders(Request $request): RedirectResponse
+    {
+        $clinic = $request->attributes->get('clinic') 
+            ?? (app()->has('currentClinic') ? app('currentClinic') : null) 
+            ?? $request->user()?->clinic;
+
+        $res = $this->reminderService->sendH1Reminders($clinic?->id);
+
+        return back()->with('success', "Pengingat H-1 selesai diproses: {$res['sent']} pesan WhatsApp terkirim (Total antrian besok: {$res['total_eligible']}).");
     }
 
     /**

@@ -27,8 +27,15 @@
             </div>
         </form>
 
-        <div class="flex items-center gap-3">
-            <button onclick="document.getElementById('manualModal').classList.remove('hidden')" class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm shadow-md shadow-blue-500/20 transition flex items-center">
+        <div class="flex items-center gap-2.5">
+            <form action="{{ route('queue.reminders.h1') }}" method="POST" onsubmit="return confirm('Kirimkan pesan pengingat WhatsApp ke seluruh pasien yang terjadwal besok?')">
+                @csrf
+                <button type="submit" class="px-3.5 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 font-medium text-xs border border-amber-200 shadow-sm transition flex items-center" title="Kirimkan pengingat WA H-1 ke pasien besok">
+                    <i class="fa-solid fa-bell mr-1.5 text-amber-600"></i> Kirim Pengingat Besok (H-1)
+                </button>
+            </form>
+
+            <button onclick="document.getElementById('manualModal').classList.remove('hidden')" class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs sm:text-sm shadow-md shadow-blue-500/20 transition flex items-center">
                 <i class="fa-solid fa-user-plus mr-2"></i> Tambah Pasien Manual
             </button>
         </div>

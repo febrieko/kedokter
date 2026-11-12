@@ -34,6 +34,7 @@ Route::middleware(['auth', 'clinic.scope'])->prefix('antrian')->name('queue.')->
     Route::post('/{queue}/finish', [QueueController::class, 'finish'])->name('finish');
     Route::post('/{queue}/skip', [QueueController::class, 'skip'])->name('skip');
     Route::post('/{queue}/cancel', [QueueController::class, 'cancel'])->name('cancel');
+    Route::post('/reminders/h1', [QueueController::class, 'triggerH1Reminders'])->name('reminders.h1');
 });
 
 // Protected Clinic Administrator Master Data & Settings Panel (Scoped per Clinic)

@@ -112,3 +112,4 @@ class ClinicController extends Controller
         return back()->with('success', "Mode pantau dialihkan ke: {$clinic->name}");
     }
 }
+

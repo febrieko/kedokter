@@ -20,3 +20,4 @@ class EnsureUserIsSuperAdmin
         return $next($request);
     }
 }
+
