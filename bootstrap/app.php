@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
             'superadmin' => \App\Http\Middleware\EnsureUserIsSuperAdmin::class,
+            'doctor.or.admin' => \App\Http\Middleware\EnsureDoctorOrAdmin::class,
             'clinic.scope' => \App\Http\Middleware\EnsureClinicScope::class,
         ]);
     })

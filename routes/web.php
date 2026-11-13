@@ -42,8 +42,8 @@ Route::middleware(['auth', 'clinic.scope'])->prefix('antrian')->name('queue.')->
     Route::post('/reminders/h1', [QueueController::class, 'triggerH1Reminders'])->name('reminders.h1');
 });
 
-// Protected Doctor Examination Portal (Scoped per Clinic)
-Route::middleware(['auth', 'clinic.scope'])->prefix('dokter')->name('doctor.')->group(function () {
+// Protected Doctor Examination Portal (Scoped per Clinic, restricted to Doctor & Admin)
+Route::middleware(['auth', 'doctor.or.admin', 'clinic.scope'])->prefix('dokter')->name('doctor.')->group(function () {
     Route::get('/antrian', [DoctorQueueController::class, 'index'])->name('queue.index');
     Route::post('/antrian/panggil-berikutnya', [DoctorQueueController::class, 'callNext'])->name('queue.call-next');
     Route::post('/antrian/{queue}/call', [DoctorQueueController::class, 'call'])->name('queue.call');

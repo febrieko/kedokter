@@ -26,8 +26,12 @@ class QueueController extends Controller
     /**
      * Dashboard antrian resepsionis
      */
-    public function index(Request $request): View
+    public function index(Request $request): View|RedirectResponse
     {
+        if ($request->user()?->isDoctor()) {
+            return redirect()->route('doctor.queue.index');
+        }
+
         $clinic = $request->attributes->get('clinic') 
             ?? (app()->has('currentClinic') ? app('currentClinic') : null) 
             ?? $request->user()?->clinic 

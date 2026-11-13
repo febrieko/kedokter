@@ -42,21 +42,29 @@
             </div>
 
             <nav class="flex items-center space-x-1.5 sm:space-x-2">
-                <a href="{{ route('doctor.queue.index') }}" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition {{ request()->routeIs('doctor.queue.*') ? 'bg-indigo-50 text-indigo-700 font-semibold border border-indigo-200' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
-                    <i class="fa-solid fa-stethoscope mr-1 text-indigo-600"></i> Ruang Dokter
-                </a>
-
-                <a href="{{ route('queue.index') }}" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition {{ request()->routeIs('queue.index') ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
-                    <i class="fa-solid fa-table-list mr-1"></i> Resepsionis
-                </a>
-
                 @auth
+                    {{-- 1. Ruang Dokter: Khusus Dokter, Admin, dan SuperAdmin --}}
+                    @if(auth()->user()->isDoctor() || auth()->user()->isAdmin())
+                    <a href="{{ route('doctor.queue.index') }}" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition {{ request()->routeIs('doctor.queue.*') ? 'bg-indigo-50 text-indigo-700 font-semibold border border-indigo-200' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                        <i class="fa-solid fa-stethoscope mr-1 text-indigo-600"></i> Ruang Dokter
+                    </a>
+                    @endif
+
+                    {{-- 2. Resepsionis: Khusus Staff Resepsionis, Admin, dan SuperAdmin (Dokter tidak perlu loket) --}}
+                    @if(!auth()->user()->isDoctor())
+                    <a href="{{ route('queue.index') }}" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition {{ request()->routeIs('queue.index') ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                        <i class="fa-solid fa-table-list mr-1"></i> Resepsionis
+                    </a>
+                    @endif
+
+                    {{-- 3. SuperAdmin Multi-Klinik Hub --}}
                     @if(auth()->user()->isSuperAdmin())
                     <a href="{{ route('superadmin.clinics.index') }}" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition {{ request()->routeIs('superadmin.clinics.*') ? 'bg-amber-100 text-amber-900 font-bold' : 'text-amber-700 hover:text-amber-900 hover:bg-amber-50' }}">
                         <i class="fa-solid fa-crown text-amber-500 mr-1"></i> Multi-Klinik
                     </a>
                     @endif
 
+                    {{-- 4. Admin Master Data & Settings Panel --}}
                     @if(auth()->user()->isAdmin())
                     <a href="{{ route('admin.doctors.index') }}" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition {{ request()->routeIs('admin.doctors.*') ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
                         <i class="fa-solid fa-user-doctor mr-1"></i> Dokter
