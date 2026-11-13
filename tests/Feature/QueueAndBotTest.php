@@ -128,16 +128,40 @@ class QueueAndBotTest extends TestCase
 
     public function test_display_data_api_endpoint(): void
     {
+        $patient = Patient::create(['name' => 'Doni', 'phone' => '+628111999777']);
+        $queue = $this->queueService->registerQueue(
+            $this->clinic->id,
+            $this->doctor->id,
+            $patient->id,
+            Carbon::today()->toDateString()
+        );
+        $this->queueService->callQueue($queue);
+
         $response = $this->getJson("/api/display/{$this->clinic->slug}/data");
 
         $response->assertStatus(200)
             ->assertJsonStructure([
                 'clinic_name',
-                'current_call',
+                'date',
+                'formatted_date',
+                'current_call' => [
+                    'number',
+                    'doctor',
+                    'room',
+                    'status',
+                ],
                 'next_queues',
                 'doctor_queues',
                 'timestamp',
             ]);
+
+        $this->assertEquals($queue->number, $response->json('current_call.number'));
+
+        // When queue transitions to IN_SERVICE, display continues showing it
+        $this->queueService->startService($queue);
+        $resInService = $this->getJson("/api/display/{$this->clinic->slug}/data");
+        $this->assertEquals('IN_SERVICE', $resInService->json('current_call.status'));
+        $this->assertEquals('Sedang Dilayani', $resInService->json('current_call.status_label'));
     }
 
     public function test_whatsapp_bot_registration_flow(): void

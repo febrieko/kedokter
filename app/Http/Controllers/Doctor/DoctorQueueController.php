@@ -237,3 +237,4 @@ class DoctorQueueController extends Controller
         }
     }
 }
+

@@ -28,6 +28,10 @@
         </form>
 
         <div class="flex items-center gap-2.5">
+            <a href="{{ route('display', ['clinic_slug' => $clinic->slug, 'date' => $date, 'doctor_id' => $selectedDoctor?->id]) }}" target="_blank" class="px-3.5 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-medium text-xs border border-emerald-200 shadow-sm transition flex items-center" title="Buka layar TV display untuk tanggal & dokter ini">
+                <i class="fa-solid fa-desktop mr-1.5 text-emerald-600"></i> TV Display
+            </a>
+
             <form action="{{ route('queue.reminders.h1') }}" method="POST" onsubmit="return confirm('Kirimkan pesan pengingat WhatsApp ke seluruh pasien yang terjadwal besok?')">
                 @csrf
                 <button type="submit" class="px-3.5 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 font-medium text-xs border border-amber-200 shadow-sm transition flex items-center" title="Kirimkan pengingat WA H-1 ke pasien besok">

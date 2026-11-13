@@ -69,10 +69,14 @@ class QueueController extends Controller
     /**
      * Public Waiting Room Display
      */
-    public function display(string $clinicSlug): View
+    public function display(Request $request, string $clinicSlug): View
     {
         $clinic = Clinic::where('slug', $clinicSlug)->firstOrFail();
-        return view('queue.display', compact('clinic'));
+        $date = $request->input('date', Carbon::today()->toDateString());
+        $doctorId = $request->input('doctor_id');
+        $doctors = $clinic->doctors()->where('clinic_doctors.is_active', true)->get();
+
+        return view('queue.display', compact('clinic', 'date', 'doctorId', 'doctors'));
     }
 
     /**
