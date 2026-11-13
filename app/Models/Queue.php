@@ -81,6 +81,11 @@ class Queue extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function encounter(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Encounter::class);
+    }
+
     public function canBeCalled(): bool
     {
         return in_array($this->status, [self::STATUS_WAITING, self::STATUS_SKIPPED, self::STATUS_CALLED]);

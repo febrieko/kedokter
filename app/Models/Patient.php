@@ -46,5 +46,15 @@ class Patient extends Model
     {
         return $this->hasMany(MessageLog::class);
     }
+
+    public function encounters(): HasMany
+    {
+        return $this->hasMany(Encounter::class);
+    }
+
+    public function medicalRecords(): HasMany
+    {
+        return $this->hasMany(MedicalRecord::class);
+    }
 }
 

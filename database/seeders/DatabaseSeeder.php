@@ -20,6 +20,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // 0. Seed Master Data ICD-10
+        $this->call(Icd10Seeder::class);
+
         // 1. Create Default Clinic
         $clinic = Clinic::firstOrCreate(
             ['slug' => 'klinik-sehat'],
