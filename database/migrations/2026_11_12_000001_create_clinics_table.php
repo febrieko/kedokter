@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->string('timezone')->default('Asia/Jakarta');
             $table->string('whatsapp_provider')->default('FONNTE'); // FONNTE, WAHA, CLOUD_API
-            $table->json('whatsapp_config')->nullable(); // encrypted token/credentials
+            $table->text('whatsapp_config')->nullable(); // encrypted token/credentials
             $table->json('settings')->nullable(); // max_booking_days, auto_call_limit, etc.
             $table->boolean('is_active')->default(true);
             $table->timestamps();
