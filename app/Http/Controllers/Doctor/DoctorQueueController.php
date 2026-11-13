@@ -4,7 +4,13 @@ namespace App\Http\Controllers\Doctor;
 
 use App\Http\Controllers\Controller;
 use App\Models\Clinic;
+use App\Models\ClinicalProcedure;
 use App\Models\Doctor;
+use App\Models\Encounter;
+use App\Models\Icd10Code;
+use App\Models\MedicalRecord;
+use App\Models\Prescription;
+use App\Models\PrescriptionItem;
 use App\Models\Queue;
 use App\Models\ScheduleStat;
 use App\Services\QueueService;
@@ -25,7 +31,7 @@ class DoctorQueueController extends Controller
     ) {}
 
     /**
-     * Tampilan Antrian Ruang Praktik Dokter
+     * Tampilan Antrian Ruang Praktik Dokter & Rekam Medis Elektronik (RME)
      */
     public function index(Request $request): View|RedirectResponse
     {
@@ -56,8 +62,8 @@ class DoctorQueueController extends Controller
             return redirect()->route('queue.index')->with('warning', 'Dokter tidak ditemukan.');
         }
 
-        // Ambil semua antrian hari ini untuk dokter ini
-        $allQueues = Queue::with(['patient', 'schedule'])
+        // Ambil semua antrian hari ini untuk dokter ini lengkap dengan encounter & rekam medis
+        $allQueues = Queue::with(['patient', 'schedule', 'encounter.medicalRecord.primaryIcd10', 'encounter.prescriptions.items'])
             ->where('clinic_id', $clinic->id)
             ->where('doctor_id', $selectedDoctor->id)
             ->whereDate('queue_date', $date)
@@ -67,6 +73,26 @@ class DoctorQueueController extends Controller
         // 1. Pasien Aktif (Sedang diperiksa atau baru saja dipanggil)
         $activeQueue = $allQueues->firstWhere('status', Queue::STATUS_IN_SERVICE)
             ?? $allQueues->firstWhere('status', Queue::STATUS_CALLED);
+
+        // Ambil data encounter aktif, rekam medis aktif, dan riwayat rekam medis pasien sebelumnya
+        $activeEncounter = null;
+        $patientHistory = collect();
+        if ($activeQueue) {
+            $activeEncounter = Encounter::with(['medicalRecord.primaryIcd10', 'prescriptions.items', 'clinicalProcedures'])
+                ->firstWhere('queue_id', $activeQueue->id);
+
+            $patientHistory = MedicalRecord::with(['encounter', 'primaryIcd10', 'doctor'])
+                ->where('patient_id', $activeQueue->patient_id)
+                ->when($activeEncounter?->medicalRecord?->id, function ($q, $id) {
+                    $q->where('id', '!=', $id);
+                })
+                ->latest()
+                ->take(5)
+                ->get();
+        }
+
+        // Top 20 Common ICD-10 untuk saran cepat dokter
+        $commonIcd10 = Icd10Code::where('is_common', true)->orderBy('code')->take(20)->get();
 
         // 2. Daftar Menunggu (WAITING)
         $waitingQueues = $allQueues->where('status', Queue::STATUS_WAITING)->values();
@@ -101,6 +127,9 @@ class DoctorQueueController extends Controller
             'selectedDoctor',
             'date',
             'activeQueue',
+            'activeEncounter',
+            'patientHistory',
+            'commonIcd10',
             'nextQueue',
             'waitingQueues',
             'doneQueues',
@@ -150,26 +179,165 @@ class DoctorQueueController extends Controller
     }
 
     /**
-     * Mulai pelayanan / pemeriksaan pasien
+     * Mulai pelayanan / pemeriksaan pasien & inisialisasi Encounter
      */
     public function start(Queue $queue): RedirectResponse
     {
         $this->queueService->startService($queue);
+
+        // Inisialisasi Encounter Kunjungan Pasien jika belum ada
+        Encounter::firstOrCreate(
+            ['queue_id' => $queue->id],
+            [
+                'clinic_id' => $queue->clinic_id,
+                'patient_id' => $queue->patient_id,
+                'doctor_id' => $queue->doctor_id,
+                'encounter_date' => $queue->queue_date,
+                'start_time' => now(),
+                'encounter_type' => Encounter::TYPE_OUTPATIENT,
+                'status' => Encounter::STATUS_IN_PROGRESS,
+                'created_by' => auth()->id(),
+            ]
+        );
+
         return back()->with('success', "Pemeriksaan pasien #{$queue->number} ({$queue->patient->name}) telah dimulai.");
     }
 
     /**
-     * Selesai pemeriksaan dengan opsional catatan dokter / resep / diagnosa
+     * Selesai pemeriksaan dengan penyimpanan Rekam Medis SOAP, ICD-10 & Resep Obat
      */
     public function finish(Request $request, Queue $queue): RedirectResponse
     {
-        $notes = $request->input('doctor_notes');
-        $this->queueService->finishService($queue, $notes);
+        // 1. Validasi input formulir Rekam Medis
+        $validated = $request->validate([
+            'complaint' => 'nullable|string|max:1000',
+            'history_of_present_illness' => 'nullable|string|max:2000',
+            'allergy_history' => 'nullable|string|max:500',
+            'systolic' => 'nullable|integer|min:40|max:300',
+            'diastolic' => 'nullable|integer|min:20|max:200',
+            'heart_rate' => 'nullable|integer|min:30|max:250',
+            'respiratory_rate' => 'nullable|integer|min:5|max:80',
+            'temperature' => 'nullable|numeric|min:30|max:45',
+            'weight' => 'nullable|numeric|min:1|max:300',
+            'height' => 'nullable|numeric|min:20|max:250',
+            'physical_examination' => 'nullable|string|max:2000',
+            'primary_icd10_code' => 'nullable|string|exists:icd10_codes,code',
+            'diagnosis_notes' => 'nullable|string|max:2000',
+            'doctor_notes' => 'nullable|string|max:2000',
+            'treatment_plan' => 'nullable|string|max:2000',
+            'medicines' => 'nullable|array',
+            'medicines.*.name' => 'nullable|string|max:255',
+            'medicines.*.dosage' => 'nullable|string|max:100',
+            'medicines.*.form' => 'nullable|string|max:50',
+            'medicines.*.frequency' => 'nullable|string|max:100',
+            'medicines.*.quantity' => 'nullable|integer|min:1|max:500',
+            'medicines.*.instructions' => 'nullable|string|max:255',
+            'procedure_name' => 'nullable|string|max:255',
+            'procedure_cost' => 'nullable|numeric|min:0',
+            'procedure_notes' => 'nullable|string|max:1000',
+        ]);
 
-        // Otomasi Pengingat: Pemicu pengingat giliran dekat bagi pasien berikutnya
+        // 2. Pastikan Encounter Kunjungan Pasien Ada
+        $encounter = Encounter::firstOrCreate(
+            ['queue_id' => $queue->id],
+            [
+                'clinic_id' => $queue->clinic_id,
+                'patient_id' => $queue->patient_id,
+                'doctor_id' => $queue->doctor_id,
+                'encounter_date' => $queue->queue_date,
+                'start_time' => $queue->started_at ?? now(),
+                'encounter_type' => Encounter::TYPE_OUTPATIENT,
+                'status' => Encounter::STATUS_IN_PROGRESS,
+                'created_by' => auth()->id(),
+            ]
+        );
+
+        // 3. Simpan / Perbarui Catatan Medis SOAP & Tanda Vital
+        $medicalRecord = MedicalRecord::updateOrCreate(
+            ['encounter_id' => $encounter->id],
+            [
+                'clinic_id' => $queue->clinic_id,
+                'patient_id' => $queue->patient_id,
+                'doctor_id' => $queue->doctor_id,
+                'complaint' => $validated['complaint'] ?? $queue->complaint,
+                'history_of_present_illness' => $validated['history_of_present_illness'] ?? null,
+                'allergy_history' => $validated['allergy_history'] ?? null,
+                'systolic' => $validated['systolic'] ?? null,
+                'diastolic' => $validated['diastolic'] ?? null,
+                'heart_rate' => $validated['heart_rate'] ?? null,
+                'respiratory_rate' => $validated['respiratory_rate'] ?? null,
+                'temperature' => $validated['temperature'] ?? null,
+                'weight' => $validated['weight'] ?? null,
+                'height' => $validated['height'] ?? null,
+                'physical_examination' => $validated['physical_examination'] ?? null,
+                'primary_icd10_code' => $validated['primary_icd10_code'] ?? null,
+                'diagnosis_notes' => $validated['diagnosis_notes'] ?? $validated['doctor_notes'] ?? null,
+                'treatment_plan' => $validated['treatment_plan'] ?? null,
+            ]
+        );
+
+        $medicalRecord->bmi = $medicalRecord->calculateBmi();
+        $medicalRecord->save();
+
+        // 4. Simpan Resep Obat jika ada obat yang diresepkan
+        $medicines = $validated['medicines'] ?? [];
+        $validMedicines = array_filter($medicines, fn($m) => !empty($m['name']));
+        if (!empty($validMedicines)) {
+            $prescription = Prescription::firstOrCreate(
+                ['encounter_id' => $encounter->id],
+                [
+                    'clinic_id' => $queue->clinic_id,
+                    'patient_id' => $queue->patient_id,
+                    'doctor_id' => $queue->doctor_id,
+                    'status' => Prescription::STATUS_PRESCRIBED,
+                ]
+            );
+
+            $prescription->items()->delete();
+            foreach ($validMedicines as $med) {
+                $prescription->items()->create([
+                    'medicine_name' => $med['name'],
+                    'dosage' => $med['dosage'] ?? null,
+                    'form' => $med['form'] ?? 'Tablet',
+                    'frequency' => $med['frequency'] ?? '3x1 sehari sesudah makan',
+                    'quantity' => (int) ($med['quantity'] ?? 1),
+                    'instructions' => $med['instructions'] ?? null,
+                ]);
+            }
+        }
+
+        // 5. Simpan Tindakan Medis jika ada
+        if (!empty($validated['procedure_name'])) {
+            ClinicalProcedure::updateOrCreate(
+                ['encounter_id' => $encounter->id, 'procedure_name' => $validated['procedure_name']],
+                [
+                    'clinic_id' => $queue->clinic_id,
+                    'patient_id' => $queue->patient_id,
+                    'doctor_id' => $queue->doctor_id,
+                    'cost' => $validated['procedure_cost'] ?? 0,
+                    'notes' => $validated['procedure_notes'] ?? null,
+                ]
+            );
+        }
+
+        // 6. Tandai Encounter selesai
+        $encounter->update([
+            'status' => Encounter::STATUS_COMPLETED,
+            'end_time' => now(),
+        ]);
+
+        // 7. Ringkasan Diagnosa untuk Kolom Doctor Notes di tabel antrian
+        $icdCode = $medicalRecord->primaryIcd10;
+        $summaryDiagnosis = $icdCode
+            ? "[{$icdCode->code}] {$icdCode->name_id}"
+            : ($validated['diagnosis_notes'] ?? $validated['doctor_notes'] ?? 'Konsultasi selesai');
+
+        $this->queueService->finishService($queue, $summaryDiagnosis);
+
+        // 8. Otomasi Pengingat: Pemicu pengingat giliran dekat bagi pasien berikutnya
         $this->reminderService->checkAndTriggerNearTurn($queue);
 
-        return back()->with('success', "Pemeriksaan pasien #{$queue->number} ({$queue->patient->name}) selesai. Catatan berhasil disimpan.");
+        return back()->with('success', "Pemeriksaan pasien #{$queue->number} ({$queue->patient->name}) selesai. Rekam medis SOAP dan resep obat berhasil disimpan.");
     }
 
     /**
@@ -237,4 +405,3 @@ class DoctorQueueController extends Controller
         }
     }
 }
-

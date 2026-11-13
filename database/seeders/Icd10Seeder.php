@@ -117,3 +117,4 @@ class Icd10Seeder extends Seeder
         }
     }
 }
+

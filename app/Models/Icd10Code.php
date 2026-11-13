@@ -41,3 +41,4 @@ class Icd10Code extends Model
             ->orWhere('name_en', 'like', "%{$term}%");
     }
 }
+

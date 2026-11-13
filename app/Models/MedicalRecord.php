@@ -89,4 +89,16 @@ class MedicalRecord extends Model
         }
         return null;
     }
+
+    /**
+     * Format Tekanan Darah (e.g. 120/80)
+     */
+    public function getBloodPressureAttribute(): ?string
+    {
+        if ($this->systolic && $this->diastolic) {
+            return "{$this->systolic}/{$this->diastolic}";
+        }
+        return null;
+    }
 }
+

@@ -214,4 +214,139 @@ class DoctorPortalTest extends TestCase
 
         $response->assertRedirect('/dokter/antrian');
     }
+
+    public function test_doctor_can_complete_consultation_with_full_emr_and_prescription(): void
+    {
+        $this->seed(\Database\Seeders\Icd10Seeder::class);
+
+        $patient = Patient::create([
+            'name' => 'Siti Rahmawati',
+            'nik' => '3201015501900001',
+            'phone' => '+6281299990005',
+            'gender' => 'FEMALE',
+            'insurance_type' => 'BPJS',
+            'insurance_number' => '0001234567890',
+        ]);
+
+        $queue = Queue::create([
+            'clinic_id' => $this->clinic->id,
+            'doctor_id' => $this->doctor->id,
+            'patient_id' => $patient->id,
+            'queue_date' => Carbon::today()->toDateString(),
+            'number' => 2,
+            'status' => Queue::STATUS_CALLED,
+            'source' => Queue::SOURCE_MANUAL,
+            'complaint' => 'Nyeri ulu hati dan kembung',
+            'call_count' => 1,
+        ]);
+
+        // 1. Doctor starts examination
+        $startRes = $this->actingAs($this->doctorUser)
+            ->withSession(['active_clinic_id' => $this->clinic->id])
+            ->post("/dokter/antrian/{$queue->id}/start");
+
+        $startRes->assertRedirect();
+        $this->assertEquals(Queue::STATUS_IN_SERVICE, $queue->fresh()->status);
+
+        // 2. Doctor finishes with full EMR, ICD-10, and Prescription
+        $finishRes = $this->actingAs($this->doctorUser)
+            ->withSession(['active_clinic_id' => $this->clinic->id])
+            ->post("/dokter/antrian/{$queue->id}/finish", [
+                'complaint' => 'Nyeri ulu hati memberat 2 hari terakhir',
+                'history_of_present_illness' => 'Nyeri dirasakan perih setelah makan pedas, disertai mual tanpa muntah.',
+                'allergy_history' => 'Tidak ada alergi obat',
+                'systolic' => 120,
+                'diastolic' => 80,
+                'heart_rate' => 76,
+                'respiratory_rate' => 18,
+                'temperature' => 36.5,
+                'weight' => 60,
+                'height' => 165,
+                'physical_examination' => 'Abdomen: Nyeri tekan epigastrium (+), bising usus normal.',
+                'primary_icd10_code' => 'K30',
+                'diagnosis_notes' => 'Dispepsia fungsional eksaserbasi akut',
+                'treatment_plan' => 'Makan teratur, hindari asam dan pedas, banyak istirahat.',
+                'medicines' => [
+                    [
+                        'name' => 'Antasida Doen',
+                        'dosage' => '500 mg',
+                        'form' => 'Tablet',
+                        'frequency' => '3x1 kunyah sebelum makan',
+                        'quantity' => 15,
+                        'instructions' => 'Dikunyah sebelum makan',
+                    ],
+                    [
+                        'name' => 'Omeprazole',
+                        'dosage' => '20 mg',
+                        'form' => 'Kapsul',
+                        'frequency' => '1x1 pagi',
+                        'quantity' => 7,
+                        'instructions' => 'Sebelum sarapan',
+                    ],
+                ],
+                'procedure_name' => 'Pemeriksaan EKG Sederhana',
+                'procedure_cost' => 50000,
+                'procedure_notes' => 'Irama sinus normal',
+            ]);
+
+        $finishRes->assertRedirect();
+        $freshQueue = $queue->fresh();
+        $this->assertEquals(Queue::STATUS_DONE, $freshQueue->status);
+        $this->assertNotNull($freshQueue->finished_at);
+        $this->assertStringContainsString('K30', $freshQueue->doctor_notes);
+
+        // Validate Encounter
+        $encounter = \App\Models\Encounter::where('queue_id', $queue->id)->first();
+        $this->assertNotNull($encounter);
+        $this->assertEquals(\App\Models\Encounter::STATUS_COMPLETED, $encounter->status);
+
+        // Validate MedicalRecord & Auto BMI (60 / 1.65^2 = ~22.0)
+        $medicalRecord = $encounter->medicalRecord;
+        $this->assertNotNull($medicalRecord);
+        $this->assertEquals('K30', $medicalRecord->primary_icd10_code);
+        $this->assertEquals(22.0, $medicalRecord->bmi);
+        $this->assertEquals(120, $medicalRecord->systolic);
+        $this->assertEquals(80, $medicalRecord->diastolic);
+        $this->assertEquals('120/80', $medicalRecord->blood_pressure);
+        $this->assertStringContainsString('epigastrium', $medicalRecord->physical_examination);
+
+        // Validate Prescription & Items
+        $prescription = $encounter->prescriptions->first();
+        $this->assertNotNull($prescription);
+        $this->assertCount(2, $prescription->items);
+        $this->assertEquals('Antasida Doen', $prescription->items[0]->medicine_name);
+        $this->assertEquals(15, $prescription->items[0]->quantity);
+
+        // Validate Clinical Procedure
+        $procedure = $encounter->clinicalProcedures->first();
+        $this->assertNotNull($procedure);
+        $this->assertEquals('Pemeriksaan EKG Sederhana', $procedure->procedure_name);
+        $this->assertEquals(50000, $procedure->cost);
+    }
+
+    public function test_icd10_autocomplete_api_endpoint(): void
+    {
+        $this->seed(\Database\Seeders\Icd10Seeder::class);
+
+        // Search by query "hiper"
+        $response = $this->getJson('/api/icd10/search?q=hiper');
+        $response->assertOk();
+        $data = $response->json();
+        $this->assertNotEmpty($data);
+        $this->assertTrue(collect($data)->contains(fn($item) => $item['code'] === 'I10'));
+
+        // Search by code "K30"
+        $responseK30 = $this->getJson('/api/icd10/search?q=K30');
+        $responseK30->assertOk();
+        $dataK30 = $responseK30->json();
+        $this->assertNotEmpty($dataK30);
+        $this->assertEquals('K30', $dataK30[0]['code']);
+
+        // Default empty query returns common codes
+        $responseDefault = $this->getJson('/api/icd10/search');
+        $responseDefault->assertOk();
+        $dataDefault = $responseDefault->json();
+        $this->assertNotEmpty($dataDefault);
+        $this->assertLessThanOrEqual(15, count($dataDefault));
+    }
 }

@@ -88,3 +88,4 @@ class Encounter extends Model
         return $this->status === self::STATUS_LOCKED;
     }
 }
+
