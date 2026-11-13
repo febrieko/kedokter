@@ -169,6 +169,16 @@
                             </div>
                         </div>
 
+                        <!-- Keluhan Utama Pasien -->
+                        <div class="bg-amber-50/80 border border-amber-200/90 rounded-2xl p-4 my-2 text-slate-800">
+                            <span class="text-xs font-bold text-amber-900 uppercase tracking-wider flex items-center">
+                                <i class="fa-solid fa-head-side-cough text-amber-600 mr-1.5 text-sm"></i> Keluhan Awal / Alasan Kunjungan:
+                            </span>
+                            <p class="text-sm font-semibold text-amber-950 mt-1">
+                                {{ $activeQueue->complaint ?: 'Tidak ada keluhan tertulis (Pemeriksaan umum / kontrol rutin)' }}
+                            </p>
+                        </div>
+
                         <!-- Panel Form Selesai Konsultasi / Input Catatan Dokter -->
                         @if($activeQueue->status === 'IN_SERVICE')
                             <form action="{{ route('doctor.queue.finish', $activeQueue) }}" method="POST" class="mt-2 pt-4 border-t border-slate-100">
@@ -242,6 +252,11 @@
                                     #{{ str_pad($nextQueue->number, 2, '0', STR_PAD_LEFT) }} - {{ $nextQueue->patient->name }}
                                 </span>
                                 <span class="text-xs text-slate-500">{{ $nextQueue->patient->insurance_type }} • {{ $nextQueue->patient->phone ?? '-' }}</span>
+                                @if($nextQueue->complaint)
+                                    <span class="text-xs text-amber-800 bg-amber-100/70 px-2 py-0.5 rounded border border-amber-200 block mt-1">
+                                        <i class="fa-solid fa-head-side-cough text-amber-600 mr-1 text-[11px]"></i> Keluhan: {{ $nextQueue->complaint }}
+                                    </span>
+                                @endif
                             </div>
                             <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700">Antrian #{{ $nextQueue->number }}</span>
                         </div>
@@ -303,6 +318,11 @@
                             </div>
                             <div>
                                 <h4 class="text-xs font-bold text-slate-900 leading-tight">{{ $q->patient->name }}</h4>
+                                @if($q->complaint)
+                                    <div class="text-[11px] text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/60 mt-0.5 truncate max-w-[200px]" title="{{ $q->complaint }}">
+                                        <i class="fa-solid fa-head-side-cough text-amber-600 mr-1 text-[10px]"></i> {{ $q->complaint }}
+                                    </div>
+                                @endif
                                 <div class="flex items-center space-x-2 text-[11px] text-slate-400 mt-0.5">
                                     <span class="font-medium text-slate-600">{{ $q->patient->insurance_type }}</span>
                                     <span>•</span>
@@ -366,6 +386,11 @@
                             </div>
                             <div>
                                 <h4 class="text-xs font-bold text-slate-900 leading-tight">{{ $q->patient->name }}</h4>
+                                @if($q->complaint)
+                                    <div class="text-[11px] text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/60 mt-0.5 truncate max-w-[200px]" title="{{ $q->complaint }}">
+                                        <i class="fa-solid fa-head-side-cough text-amber-600 mr-1 text-[10px]"></i> {{ $q->complaint }}
+                                    </div>
+                                @endif
                                 <span class="text-[11px] text-amber-700">Dilewati (Dipanggil {{ $q->call_count }}x)</span>
                             </div>
                         </div>

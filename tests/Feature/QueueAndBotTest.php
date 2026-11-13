@@ -189,10 +189,15 @@ class QueueAndBotTest extends TestCase
         $reply5 = $bot->handleIncoming($this->clinic, $phone, '1');
         $this->assertStringContainsString('Pilih tanggal berobat', $reply5);
 
-        // 6. Select date 1 -> registers queue successfully
+        // 6. Select date 1 -> asks for complaint
         $reply6 = $bot->handleIncoming($this->clinic, $phone, '1');
-        $this->assertStringContainsString('PENDAFTARAN ANTRIAN BERHASIL', $reply6);
-        $this->assertStringContainsString('#1', $reply6);
+        $this->assertStringContainsString('Keluhan Utama', $reply6);
+
+        // 7. Submit complaint -> registers queue successfully
+        $reply7 = $bot->handleIncoming($this->clinic, $phone, 'Demam tinggi dan pusing');
+        $this->assertStringContainsString('PENDAFTARAN ANTRIAN BERHASIL', $reply7);
+        $this->assertStringContainsString('#1', $reply7);
+        $this->assertStringContainsString('Demam tinggi dan pusing', $reply7);
 
         // Verify patient saved with BPJS and NIK
         $savedPatient = Patient::where('phone', $phone)->first();

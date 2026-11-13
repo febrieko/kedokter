@@ -29,6 +29,7 @@ class Queue extends Model
         'queue_date',
         'number',
         'status',
+        'complaint',
         'doctor_notes',
         'source',
         'call_count',

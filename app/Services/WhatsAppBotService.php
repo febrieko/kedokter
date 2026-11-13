@@ -251,6 +251,21 @@ class WhatsAppBotService
                 }
 
                 $selectedDate = $dateOptions[$choice];
+                $context['selected_date'] = $selectedDate;
+
+                $state->update([
+                    'step' => 'ASK_COMPLAINT',
+                    'context' => $context,
+                    'expires_at' => now()->addMinutes(15),
+                ]);
+
+                return "Tuliskan *Keluhan Utama / Alasan Kunjungan* Anda secara singkat (contoh: *Demam 2 hari, batuk pilek, periksa tensi*), atau ketik *LEWATI* jika tidak ingin mengisi:";
+
+            case 'ASK_COMPLAINT':
+                $complaintInput = trim($input);
+                $complaint = (strtoupper($complaintInput) === 'LEWATI' || $complaintInput === '-') ? null : $complaintInput;
+
+                $selectedDate = $context['selected_date'];
                 $doctorId = $context['doctor_id'];
                 $patientId = $context['patient_id'];
 
@@ -260,7 +275,9 @@ class WhatsAppBotService
                         $doctorId,
                         $patientId,
                         $selectedDate,
-                        Queue::SOURCE_WHATSAPP
+                        Queue::SOURCE_WHATSAPP,
+                        null,
+                        $complaint
                     );
 
                     // Registration complete -> clear state
@@ -270,10 +287,13 @@ class WhatsAppBotService
                     $estTime = $this->queueService->calculateEstimatedTime($queue);
                     $formattedDate = Carbon::parse($selectedDate)->locale('id')->translatedFormat('l, d F Y');
 
+                    $keluhanText = $complaint ? "Keluhan: _{$complaint}_\n" : "";
+
                     return "🎉 *PENDAFTARAN ANTRIAN BERHASIL!*\n\n"
                         . "Klinik: *{$clinic->name}*\n"
                         . "Dokter: *{$doctor->name}*\n"
                         . "Tanggal: *{$formattedDate}*\n"
+                        . $keluhanText
                         . "━━━━━━━━━━━━━━━━━━━━\n"
                         . "Nomor Antrian: *#{$queue->number}*\n"
                         . "Estimasi Dilayani: *{$estTime}*\n"

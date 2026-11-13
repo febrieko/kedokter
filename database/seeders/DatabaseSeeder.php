@@ -188,6 +188,14 @@ class DatabaseSeeder extends Seeder
             ->where('weekday', Carbon::today()->dayOfWeek)
             ->first();
 
+        $complaints = [
+            'Nyeri ulu hati & mual muntah sejak 2 hari yang lalu',
+            'Demam tinggi 38.5°C, batuk kering dan sakit tenggorokan',
+            'Kontrol rutin tekanan darah tinggi & evaluasi obat hipertensi',
+            'Pusing berputar (vertigo) dan lemas',
+            'Sesak napas ringan dan batuk berdahak',
+        ];
+
         foreach ($patientsData as $index => $data) {
             $patient = Patient::firstOrCreate(
                 ['phone' => $data['phone']],
@@ -204,7 +212,7 @@ class DatabaseSeeder extends Seeder
                 default => Queue::STATUS_WAITING,
             };
 
-            Queue::firstOrCreate(
+            Queue::updateOrCreate(
                 [
                     'clinic_id' => $clinic->id,
                     'doctor_id' => $doc1->id,
@@ -215,9 +223,13 @@ class DatabaseSeeder extends Seeder
                     'doctor_schedule_id' => $scheduleDoc1?->id,
                     'patient_id' => $patient->id,
                     'status' => $status,
+                    'complaint' => $complaints[$index] ?? 'Pemeriksaan kesehatan rutin',
+                    'doctor_notes' => $status === Queue::STATUS_DONE ? 'Diagnosa: Dispepsia fungsional. Terapi: Antasida 3x1 ac, Ranitidine 150mg 2x1.' : null,
                     'source' => $index % 2 === 0 ? Queue::SOURCE_WHATSAPP : Queue::SOURCE_MANUAL,
                     'call_count' => $status === Queue::STATUS_CALLED ? 1 : ($status === Queue::STATUS_DONE ? 1 : 0),
                     'last_called_at' => $status === Queue::STATUS_CALLED ? now() : null,
+                    'started_at' => $status === Queue::STATUS_DONE ? now()->subMinutes(25) : null,
+                    'finished_at' => $status === Queue::STATUS_DONE ? now()->subMinutes(10) : null,
                     'registered_at' => now()->subHours(4 - $index),
                 ]
             );

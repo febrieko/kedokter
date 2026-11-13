@@ -107,7 +107,8 @@ class QueueService
         string $patientId,
         string $targetDateString,
         string $source = Queue::SOURCE_WHATSAPP,
-        ?int $userId = null
+        ?int $userId = null,
+        ?string $complaint = null
     ): Queue {
         $targetDate = Carbon::parse($targetDateString);
         $today = Carbon::today();
@@ -117,7 +118,7 @@ class QueueService
             throw new Exception("Pendaftaran hanya dibuka dari hari ini hingga 3 hari ke depan ({$today->format('d/m')} - {$maxDate->format('d/m')}).");
         }
 
-        return DB::transaction(function () use ($clinicId, $doctorId, $patientId, $targetDate, $source, $userId) {
+        return DB::transaction(function () use ($clinicId, $doctorId, $patientId, $targetDate, $source, $userId, $complaint) {
             // Check if patient already has an active queue for this doctor on this date
             $existing = Queue::where('clinic_id', $clinicId)
                 ->where('doctor_id', $doctorId)
@@ -157,6 +158,7 @@ class QueueService
                 'queue_date' => $targetDate->toDateString(),
                 'number' => $nextNumber,
                 'status' => Queue::STATUS_WAITING,
+                'complaint' => $complaint,
                 'source' => $source,
                 'call_count' => 0,
                 'registered_at' => now(),

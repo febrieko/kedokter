@@ -140,6 +140,11 @@
                                     </span>
                                 @endif
                             </div>
+                            @if($q->complaint)
+                                <div class="text-[11px] text-amber-800 bg-amber-50/80 px-2 py-0.5 rounded border border-amber-200/70 inline-flex items-center mt-1 max-w-xs truncate" title="{{ $q->complaint }}">
+                                    <i class="fa-solid fa-head-side-cough text-amber-600 mr-1 text-[10px]"></i> {{ $q->complaint }}
+                                </div>
+                            @endif
                         </td>
                         <td class="px-6 py-4 text-xs space-y-0.5">
                             <div class="font-mono text-slate-700"><i class="fa-brands fa-whatsapp text-emerald-600 mr-1"></i>{{ $q->patient->phone }}</div>
@@ -299,6 +304,11 @@
             <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Nomor BPJS / Polis (Jika ada)</label>
                 <input type="text" name="insurance_number" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Nomor kartu kepesertaan">
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Keluhan Utama / Alasan Kunjungan</label>
+                <textarea name="complaint" rows="2" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Contoh: Demam 2 hari, batuk pilek, kontrol tensi rutin..."></textarea>
             </div>
 
             <div class="pt-4 flex items-center justify-end space-x-3">

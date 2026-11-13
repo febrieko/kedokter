@@ -180,6 +180,7 @@ class QueueController extends Controller
             'nik' => 'nullable|string|size:16',
             'insurance_type' => 'required|in:NONE,BPJS,OTHER',
             'insurance_number' => 'nullable|string|max:50',
+            'complaint' => 'nullable|string|max:1000',
         ]);
 
         try {
@@ -195,13 +196,15 @@ class QueueController extends Controller
                 ]
             );
 
-            // Register queue
+            // Register queue with complaint
             $queue = $this->queueService->registerQueue(
                 $validated['clinic_id'],
                 $validated['doctor_id'],
                 $patient->id,
                 $validated['queue_date'],
-                Queue::SOURCE_MANUAL
+                Queue::SOURCE_MANUAL,
+                $request->user()?->id,
+                $validated['complaint'] ?? null
             );
 
             return back()->with('success', "Pasien manual berhasil didaftarkan dengan nomor antrian #{$queue->number}.");
