@@ -138,3 +138,4 @@ class MedicalRecordController extends Controller
         return back()->with('success', 'Catatan tambahan (Addendum) berhasil ditambahkan ke riwayat medis pasien.');
     }
 }
+
