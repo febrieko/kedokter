@@ -37,3 +37,4 @@ class Icd10ApiController extends Controller
         return response()->json($results);
     }
 }
+

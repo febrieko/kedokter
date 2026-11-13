@@ -252,6 +252,10 @@ class DoctorQueueController extends Controller
             ]
         );
 
+        if ($encounter->isLocked()) {
+            return back()->with('error', 'Rekam medis ini telah dikunci (LOCKED / Read-Only). Segala perubahan harus dilakukan melalui fitur Addendum.');
+        }
+
         // 3. Simpan / Perbarui Catatan Medis SOAP & Tanda Vital
         $medicalRecord = MedicalRecord::updateOrCreate(
             ['encounter_id' => $encounter->id],

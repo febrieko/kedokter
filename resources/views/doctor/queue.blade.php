@@ -576,8 +576,8 @@
             <!-- Tab Content: Selesai -->
             <div id="tabContent-done" class="divide-y divide-slate-100 max-h-[600px] overflow-y-auto hidden">
                 @forelse($doneQueues as $q)
-                    <div class="p-3.5 hover:bg-slate-50/80 transition">
-                        <div class="flex items-center justify-between mb-1">
+                    <div class="p-3.5 hover:bg-slate-50/80 transition space-y-2">
+                        <div class="flex items-center justify-between">
                             <div class="flex items-center space-x-2">
                                 <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800">
                                     #{{ str_pad($q->number, 2, '0', STR_PAD_LEFT) }}
@@ -590,8 +590,40 @@
                         </div>
 
                         @if($q->doctor_notes)
-                            <div class="mt-1.5 text-xs text-slate-600 bg-slate-50 p-2 rounded-lg border border-slate-200/60 font-mono">
+                            <div class="text-xs text-slate-600 bg-slate-50 p-2 rounded-lg border border-slate-200/60 font-mono">
                                 <i class="fa-solid fa-notes-medical text-slate-400 mr-1"></i> {{ $q->doctor_notes }}
+                            </div>
+                        @endif
+
+                        <!-- Kontrol RME & Kunci Status -->
+                        @if($q->encounter)
+                            <div class="flex items-center justify-between pt-1 text-[11px]">
+                                <div>
+                                    @if($q->encounter->isLocked())
+                                        <span class="px-2 py-0.5 rounded-full font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px]">
+                                            <i class="fa-solid fa-lock mr-0.5"></i> Terkunci
+                                        </span>
+                                    @else
+                                        <span class="px-2 py-0.5 rounded-full font-bold bg-amber-50 text-amber-700 border border-amber-200 text-[10px]">
+                                            <i class="fa-solid fa-lock-open mr-0.5"></i> Belum Dikunci
+                                        </span>
+                                    @endif
+                                </div>
+
+                                <div class="flex items-center space-x-1.5">
+                                    @if(!$q->encounter->isLocked())
+                                        <form action="{{ route('doctor.medical-record.lock', $q->encounter) }}" method="POST">
+                                            @csrf
+                                            <button type="submit" onclick="return confirm('Kunci dan tandatangani rekam medis #{{ $q->encounter->id }}?')" class="px-2 py-1 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-[10px] border border-amber-300 transition" title="Kunci & Tanda Tangani">
+                                                <i class="fa-solid fa-file-signature mr-0.5"></i> Kunci
+                                            </button>
+                                        </form>
+                                    @endif
+
+                                    <a href="{{ route('doctor.medical-record.show', $q->encounter) }}" class="px-2.5 py-1 rounded-md bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[10px] border border-indigo-200 transition flex items-center">
+                                        <i class="fa-solid fa-file-waveform mr-1"></i> Lihat RME
+                                    </a>
+                                </div>
                             </div>
                         @endif
                     </div>

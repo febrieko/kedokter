@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\ScheduleController;
 use App\Http\Controllers\Admin\WhatsAppSettingController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Doctor\DoctorQueueController;
+use App\Http\Controllers\Doctor\MedicalRecordController;
 use App\Http\Controllers\QueueController;
 use App\Http\Controllers\SuperAdmin\ClinicController as SuperAdminClinicController;
 use Illuminate\Support\Facades\Auth;
@@ -51,6 +52,12 @@ Route::middleware(['auth', 'doctor.or.admin', 'clinic.scope'])->prefix('dokter')
     Route::post('/antrian/{queue}/finish', [DoctorQueueController::class, 'finish'])->name('queue.finish');
     Route::post('/antrian/{queue}/skip', [DoctorQueueController::class, 'skip'])->name('queue.skip');
     Route::post('/antrian/{queue}/recall', [DoctorQueueController::class, 'recall'])->name('queue.recall');
+
+    // Rekam Medis Elektronik (RME) Detail, Cetak, Kunci (Lock/Sign), & Addendum
+    Route::get('/rekam-medis/{encounter}', [MedicalRecordController::class, 'show'])->name('medical-record.show');
+    Route::get('/rekam-medis/{encounter}/cetak', [MedicalRecordController::class, 'print'])->name('medical-record.print');
+    Route::post('/rekam-medis/{encounter}/lock', [MedicalRecordController::class, 'lock'])->name('medical-record.lock');
+    Route::post('/rekam-medis/{encounter}/addendum', [MedicalRecordController::class, 'addAddendum'])->name('medical-record.addendum');
 });
 
 // Protected Clinic Administrator Master Data & Settings Panel (Scoped per Clinic)

@@ -87,5 +87,18 @@ class Encounter extends Model
     {
         return $this->status === self::STATUS_LOCKED;
     }
+
+    /**
+     * Kunci dan tandatangani rekam medis secara digital
+     */
+    public function lock(User|int $user): void
+    {
+        $userId = $user instanceof User ? $user->id : $user;
+        $this->update([
+            'status' => self::STATUS_LOCKED,
+            'locked_at' => now(),
+            'locked_by' => $userId,
+        ]);
+    }
 }
 
